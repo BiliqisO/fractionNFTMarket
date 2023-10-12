@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-
+import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import {Receipttoken} from "./ERC20Token.sol";
 import {MockNFT} from "./MockNFT.sol";
 
@@ -33,6 +33,7 @@ contract FractionNFTMarket {
         address _NFTAddress,
         address _ERC20TokenAddress
     ) public {
+        salesId++;
         FractionSales storage fractionSales = mapSales[salesId];
         fractionSales.ERC20TokenAddress = _ERC20TokenAddress;
         fractionSales.NFTAddress = _NFTAddress;
@@ -42,10 +43,8 @@ contract FractionNFTMarket {
         fractionSales.ERC20tokenSupply = _ERC20tokenSupply;
         fractionSales.tokenId = _tokenId;
         fractionSales.ERC20TokenBalance = fractionSales.ERC20tokenSupply;
-        MockNFT(fractionSales.NFTAddress).mint(
-            msg.sender,
-            fractionSales.tokenId
-        );
+        IERC721 token = IERC721(fractionSales.NFTAddress);
+        token.transferFrom(msg.sender, address(this), fractionSales.tokenId);
         Receipttoken(fractionSales.ERC20TokenAddress).mint(
             msg.sender,
             fractionSales.ERC20tokenSupply
@@ -75,15 +74,7 @@ contract FractionNFTMarket {
             (msg.sender).balance >= fractionSales.ERC20tokenSupply,
             "You own all the fraction of token"
         );
-        MockNFT(fractionSales.NFTAddress).setApprovalForAll(
-            address(this),
-            true
-        );
-        MockNFT(fractionSales.NFTAddress).transferFrom(
-            fractionSales.platform,
-            msg.sender,
-            fractionSales.tokenId
-        );
-        fractionSales.active = false;
+        IERC721 token = IERC721(fractionSales.NFTAddress);
+        token.transferFrom(address(this), msg.sender, fractionSales.tokenId);
     }
 }
